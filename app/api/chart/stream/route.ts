@@ -4,8 +4,6 @@ import { tickBus, Tick } from '@/lib/tick-bus'
 import { ensureWorkerRunning } from '@/lib/deriv-ws'
 import { ReadableStream } from 'stream/web'
 
-export const maxDuration = 300
-
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300
 
