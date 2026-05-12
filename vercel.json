@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "app/api/chart/stream/route.ts": { "maxDuration": 300 },
+    "app/api/admin/chart/stream/route.ts": { "maxDuration": 300 }
+  }
+}
