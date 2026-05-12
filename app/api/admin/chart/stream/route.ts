@@ -3,6 +3,8 @@ import { getAdminSession } from '@/lib/admin-auth'
 import { createAdminClient } from '@/lib/supabase'
 import { tickBus, Tick } from '@/lib/tick-bus'
 import { ensureWorkerRunning } from '@/lib/deriv-ws'
+
+export const maxDuration = 300
 import { ReadableStream } from 'stream/web'
 
 export const dynamic = 'force-dynamic'
