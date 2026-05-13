@@ -25,6 +25,9 @@ interface CandleState {
 const g = global as any
 const KEY = '__derivWorker__'
 
+// Resolvers waiting for first history batch per pairId
+const historyReady: Map<string, Array<() => void>> = (g.__historyReady__ ??= new Map())
+
 interface WorkerState {
   status: WorkerStatus
   ws: WebSocket | null
@@ -58,6 +61,17 @@ function getState(): WorkerState {
 
 export function getHistory(pairId: string): CandleState[] {
   return getState().historyStore.get(pairId) ?? []
+}
+
+/** Resolves as soon as in-memory history is available for pairId, or after timeoutMs. */
+export function waitForHistory(pairId: string, timeoutMs = 4000): Promise<void> {
+  if ((getState().historyStore.get(pairId) ?? []).length > 0) return Promise.resolve()
+  return new Promise(resolve => {
+    const resolvers = historyReady.get(pairId) ?? []
+    resolvers.push(resolve)
+    historyReady.set(pairId, resolvers)
+    setTimeout(resolve, timeoutMs)
+  })
 }
 
 export function getWorkerStatus() {
@@ -214,8 +228,12 @@ function storeTickHistory(pairId: string, times: number[], prices: number[], s: 
   const sorted = [...map.values()].sort((a, b) => a.time - b.time).slice(-HISTORY_LIMIT)
   s.historyStore.set(pairId, sorted)
 
-  // Persist to DB so cold-start serverless instances can serve history
-  persistHistoryCandles(pairId, sorted).catch(() => {})
+  // Persist to DB, then signal any waiters
+  persistHistoryCandles(pairId, sorted).catch(() => {}).finally(() => {
+    const resolvers = historyReady.get(pairId) ?? []
+    historyReady.delete(pairId)
+    for (const r of resolvers) r()
+  })
 
   // Seed tick bus with last point so chart has an immediate starting position
   if (sorted.length > 0) {
