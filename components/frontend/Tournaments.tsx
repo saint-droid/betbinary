@@ -641,8 +641,9 @@ export default function Tournaments({ onBalanceDeducted, user, onLoginClick, vis
     load()
   }, [visible, load])
 
-  // Realtime — fires instantly when a real user joins or a trade updates result_balance
+  // Realtime — only subscribe when visible
   useEffect(() => {
+    if (!visible) return
     const ts = Date.now()
     const ch1 = supabase.channel(`trn_entries_${ts}`)
     const ch2 = supabase.channel(`trn_participants_${ts}`)
@@ -652,13 +653,14 @@ export default function Tournaments({ onBalanceDeducted, user, onLoginClick, vis
       supabase.removeChannel(ch1)
       supabase.removeChannel(ch2)
     }
-  }, [load])
+  }, [load, visible])
 
-  // Periodic refresh for bots crossing their join_offset_secs threshold (no DB write fires for them)
+  // Periodic refresh for bot progress — only while tab is visible
   useEffect(() => {
+    if (!visible) return
     const id = setInterval(load, 30000)
     return () => clearInterval(id)
-  }, [load])
+  }, [load, visible])
 
   function handleJoined(_tournamentId: string) {
     // Reload from server — user's entry is now saved in DB and visible to everyone

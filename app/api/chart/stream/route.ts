@@ -2,7 +2,6 @@ import { NextRequest } from 'next/server'
 import { createAdminClient } from '@/lib/supabase'
 import { tickBus, Tick } from '@/lib/tick-bus'
 import { ensureWorkerRunning } from '@/lib/deriv-ws'
-import { ReadableStream } from 'stream/web'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300

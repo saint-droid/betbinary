@@ -282,7 +282,7 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
 
   // ── 4. SSE live ticks ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!pairId) return
+    if (!pairId || !streamUrl) return
     let retryTimer: ReturnType<typeof setTimeout> | null = null
     let retryDelay = 1000
     let destroyed  = false

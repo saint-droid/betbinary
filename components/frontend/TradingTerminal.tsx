@@ -172,30 +172,40 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
   }, [pairs])
 
   const [historicalCandles, setHistoricalCandles] = useState<any[]>([])
+  const candleFetchRef = useRef<AbortController | null>(null)
 
-  const fetchCandles = useCallback(async (showOverlay = false) => {
-    if (showOverlay) {
-      setSwitching(true)
-      setLivePrice(null)
-      openPriceRef.current = null
-      setPriceChange(null)
-    }
-    if (!pair?.id) { setSwitching(false); return }
+  const fetchCandles = useCallback(async (pairId: string) => {
+    // Cancel any in-flight request for a previous pair
+    candleFetchRef.current?.abort()
+    const ctrl = new AbortController()
+    candleFetchRef.current = ctrl
+
+    setSwitching(true)
+    setLivePrice(null)
+    openPriceRef.current = null
+    setPriceChange(null)
+
     try {
-      const res = await fetch(`/api/chart?pair_id=${pair.id}&limit=7200`)
+      const res = await fetch(`/api/chart?pair_id=${pairId}&limit=7200`, { signal: ctrl.signal })
       const data = await res.json()
       setHistoricalCandles(data.candles || [])
-    } catch {}
+    } catch (e: any) {
+      if (e?.name === 'AbortError') return // pair switched mid-flight, ignore
+    }
     setSwitching(false)
-  }, [pair?.id])
+  }, [])
 
-  useEffect(() => { fetchCandles(true) }, [fetchCandles])
+  // Fetch candles whenever the selected pair changes
+  useEffect(() => {
+    if (!pair?.id) return
+    fetchCandles(pair.id)
+  }, [pair?.id, fetchCandles])
 
   useEffect(() => {
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchCandles() }
+    const onVisible = () => { if (document.visibilityState === 'visible' && pair?.id) fetchCandles(pair.id) }
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
-  }, [fetchCandles])
+  }, [pair?.id, fetchCandles])
 
   const canSwitchCurrency = !!settings?.show_currency_switcher
   const activeCurrency = canSwitchCurrency
@@ -239,13 +249,6 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
     return () => { supabase.removeChannel(ch) }
   }, [])
 
-  // Fallback: poll balance every 10s in case realtime tables aren't in the publication yet
-  useEffect(() => {
-    const id = setInterval(() => {
-      fetch('/api/auth/me').then(r => r.json()).then(d => { if (d.user) setUser(d.user) }).catch(() => {})
-    }, 10000)
-    return () => clearInterval(id)
-  }, [])
 
 
   // Chat simulation
@@ -734,7 +737,8 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
             <div className="h-[200px] w-full bg-[#0e1320] shrink-0 relative">
               <CandleChart key={pair?.id} ref={mobileChartRef} historicalCandles={historicalCandles}
                 pairId={pair?.id} candleDuration={1}
-                onTick={isMobile ? handleTick : undefined} streamUrl="/api/chart/stream"
+                onTick={isMobile ? handleTick : undefined}
+                streamUrl={isMobile ? '/api/chart/stream' : undefined}
                 entryPrice={null} visibleCandles={25} loading={switching} />
               {/* Pair selector — same as desktop, overlaid top-left */}
               <div className="absolute top-2 left-2 z-20">
@@ -979,7 +983,8 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
           {/* Chart — always mounted; blur overlay handled inside CandleChart */}
           <CandleChart key={pair?.id} ref={chartRef} historicalCandles={historicalCandles}
             pairId={pair?.id} candleDuration={1}
-            onTick={isMobile ? undefined : handleTick} streamUrl="/api/chart/stream"
+            onTick={isMobile ? undefined : handleTick}
+            streamUrl={isMobile ? undefined : '/api/chart/stream'}
             entryPrice={null} visibleCandles={30} loading={switching} />
           <DigitBar livePrice={livePrice} />
 
