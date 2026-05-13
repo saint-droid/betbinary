@@ -193,8 +193,11 @@ function handleMessage(msg: any, s: WorkerState) {
     }
     tickBus.publish(tick)
 
+    const candleState = { time: nowSec, open: price, high: price, low: price, close: price }
     // Append to in-memory history so new subscribers get it
-    appendToHistory(cfg.id, { time: nowSec, open: price, high: price, low: price, close: price }, s)
+    appendToHistory(cfg.id, candleState, s)
+    // Persist to DB so cold-start instances can read recent history
+    persistCandle(cfg.id, candleState).catch(() => {})
   }
 }
 
@@ -210,6 +213,9 @@ function storeTickHistory(pairId: string, times: number[], prices: number[], s: 
   }
   const sorted = [...map.values()].sort((a, b) => a.time - b.time).slice(-HISTORY_LIMIT)
   s.historyStore.set(pairId, sorted)
+
+  // Persist to DB so cold-start serverless instances can serve history
+  persistHistoryCandles(pairId, sorted).catch(() => {})
 
   // Seed tick bus with last point so chart has an immediate starting position
   if (sorted.length > 0) {
@@ -231,19 +237,21 @@ function appendToHistory(pairId: string, candle: CandleState, s: WorkerState) {
   }
 }
 
-async function persistHistoryCandles(pairId: string, candles: any[]) {
+async function persistHistoryCandles(pairId: string, candles: CandleState[]) {
   const db = createAdminClient()
-  const rows = candles.map((c: any) => ({
+  const rows = candles.map(c => ({
     pair_id: pairId,
-    time_open: new Date(Number(c.epoch) * 1000).toISOString(),
-    open: Number(c.open),
-    high: Number(c.high),
-    low: Number(c.low),
-    close: Number(c.close),
-    volume: 0,
-    is_simulated: false,
+    time_open: new Date(c.time * 1000).toISOString(),
+    open: c.open, high: c.high, low: c.low, close: c.close,
+    volume: 0, is_simulated: false,
   }))
-  await db.from('price_feed').upsert(rows, { onConflict: 'pair_id,time_open', ignoreDuplicates: false })
+  // Batch in chunks of 500 to stay within PostgREST limits
+  for (let i = 0; i < rows.length; i += 500) {
+    await db.from('price_feed').upsert(rows.slice(i, i + 500), { onConflict: 'pair_id,time_open', ignoreDuplicates: true })
+  }
+  // Prune rows older than 24 hours to keep the table small
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  await db.from('price_feed').delete().eq('pair_id', pairId).lt('time_open', cutoff)
 }
 
 async function persistCandle(pairId: string, candle: CandleState) {

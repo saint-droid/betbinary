@@ -13,41 +13,12 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(parseInt(searchParams.get('limit') || '7200'), 10000)
 
   const db = createAdminClient()
-  const { data: pair } = await db.from('binary_pairs').select('deriv_symbol').eq('id', pairId).single()
-  const isLive = !!(pair?.deriv_symbol)
 
-  // All binary pairs are live — always use the Deriv worker
+  // Kick off the worker (no-op if already running)
   ensureWorkerRunning().catch(() => {})
 
-  const history = getHistory(pairId)
-
-  if (history.length > 0) {
-    const liveBuffer = tickBus.getBuffer(pairId)
-    const liveTick = liveBuffer.length > 0 ? liveBuffer[liveBuffer.length - 1] : null
-
-    const map = new Map<number, { time_open: string; open: number; high: number; low: number; close: number }>()
-    for (const c of history) {
-      map.set(c.time, {
-        time_open: new Date(c.time * 1000).toISOString(),
-        open: c.open, high: c.high, low: c.low, close: c.close,
-      })
-    }
-    if (liveTick) {
-      map.set(liveTick.candle.time, {
-        time_open: new Date(liveTick.candle.time * 1000).toISOString(),
-        open: liveTick.price, high: liveTick.price, low: liveTick.price, close: liveTick.price,
-      })
-    }
-
-    const candles = [...map.values()]
-      .sort((a, b) => a.time_open.localeCompare(b.time_open))
-      .slice(-limit)
-
-    return NextResponse.json({ candles })
-  }
-
-  // Worker still connecting — fall back to DB so chart has history on refresh
-  const { data: dbCandles } = await db
+  // Always query DB first — it's the durable store that survives cold starts
+  const { data: dbRows } = await db
     .from('price_feed')
     .select('time_open, open, high, low, close')
     .eq('pair_id', pairId)
@@ -55,9 +26,38 @@ export async function GET(req: NextRequest) {
     .order('time_open', { ascending: false })
     .limit(limit)
 
-  if (dbCandles && dbCandles.length > 0) {
-    return NextResponse.json({ candles: dbCandles.reverse() })
+  const map = new Map<string, { time_open: string; open: number; high: number; low: number; close: number }>()
+
+  // Seed from DB (ascending after reverse)
+  for (const c of (dbRows || []).reverse()) {
+    map.set(c.time_open, { time_open: c.time_open, open: Number(c.open), high: Number(c.high), low: Number(c.low), close: Number(c.close) })
   }
 
-  return NextResponse.json({ candles: [] })
+  // Overlay in-memory ticks newer than the last DB row (fills the gap since last persist)
+  const dbLatestIso = dbRows && dbRows.length > 0 ? dbRows[0].time_open : null
+  const dbLatestSec = dbLatestIso ? Math.floor(new Date(dbLatestIso).getTime() / 1000) : 0
+
+  const memHistory = getHistory(pairId)
+  for (const c of memHistory) {
+    if (c.time > dbLatestSec) {
+      const iso = new Date(c.time * 1000).toISOString()
+      map.set(iso, { time_open: iso, open: c.open, high: c.high, low: c.low, close: c.close })
+    }
+  }
+
+  // Also add the very latest buffered tick
+  const liveBuffer = tickBus.getBuffer(pairId)
+  if (liveBuffer.length > 0) {
+    const latest = liveBuffer[liveBuffer.length - 1]
+    if (latest.candle.time > dbLatestSec) {
+      const iso = new Date(latest.candle.time * 1000).toISOString()
+      map.set(iso, { time_open: iso, open: latest.price, high: latest.price, low: latest.price, close: latest.price })
+    }
+  }
+
+  const candles = [...map.values()]
+    .sort((a, b) => a.time_open.localeCompare(b.time_open))
+    .slice(-limit)
+
+  return NextResponse.json({ candles })
 }
