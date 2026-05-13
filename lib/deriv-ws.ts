@@ -228,12 +228,13 @@ function storeTickHistory(pairId: string, times: number[], prices: number[], s: 
   const sorted = [...map.values()].sort((a, b) => a.time - b.time).slice(-HISTORY_LIMIT)
   s.historyStore.set(pairId, sorted)
 
-  // Persist to DB, then signal any waiters
-  persistHistoryCandles(pairId, sorted).catch(() => {}).finally(() => {
-    const resolvers = historyReady.get(pairId) ?? []
-    historyReady.delete(pairId)
-    for (const r of resolvers) r()
-  })
+  // Signal waiters immediately — in-memory is ready, chart route will use it directly
+  const resolvers = historyReady.get(pairId) ?? []
+  historyReady.delete(pairId)
+  for (const r of resolvers) r()
+
+  // Persist to DB in the background (for future cold starts)
+  persistHistoryCandles(pairId, sorted).catch(() => {})
 
   // Seed tick bus with last point so chart has an immediate starting position
   if (sorted.length > 0) {

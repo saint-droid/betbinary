@@ -149,7 +149,7 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
         borderColor: 'rgba(255,255,255,0.06)',
         timeVisible: true,
         secondsVisible: true,
-        rightOffset: 0,
+        rightOffset: 2,
         barSpacing: barSpacingRef.current,
         minBarSpacing: 1,
       },

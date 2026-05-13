@@ -54,9 +54,9 @@ export default function TradingPanel({
   const [selectedType, setSelectedType]     = useState(TRADE_TYPES[0])
   const [tradeMode, setTradeMode]           = useState<'auto' | 'manual'>('auto')
   const [stakeTab, setStakeTab]             = useState<'stake' | 'payout'>('stake')
-  const [amount, setAmount]                 = useState<string>('100')
-  const [targetProfit, setTargetProfit]     = useState<string>('200')
-  const [targetLoss, setTargetLoss]         = useState<string>('999')
+  const [amount, setAmount]                 = useState<string>('5')
+  const [targetProfit, setTargetProfit]     = useState<string>('50')
+  const [targetLoss, setTargetLoss]         = useState<string>('99')
   const [lossMult, setLossMult]             = useState<string>('2')
   const [selectedDigit, setSelectedDigit]   = useState<number>(5)
 

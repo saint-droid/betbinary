@@ -31,8 +31,9 @@ export async function GET(req: NextRequest) {
   // Query DB first
   let dbRows = await queryDB(db, pairId, limit)
 
-  // If DB is empty this is a cold start — wait for the worker to fetch and persist
-  // Deriv history (up to 4s), then retry the DB query once
+  // If DB is empty this is a cold start — wait for the worker to load Deriv history
+  // into memory (up to 4s), then retry DB (may still be empty if persist hasn't finished,
+  // but in-memory overlay below will fill it in)
   if (dbRows.length === 0) {
     await waitForHistory(pairId, 4000)
     dbRows = await queryDB(db, pairId, limit)
