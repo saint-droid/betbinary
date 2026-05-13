@@ -22,7 +22,6 @@ const titles: Record<string, string> = {
   '/admin/referrals':     'Referral Settings',
   '/admin/support':       'Support Tickets',
   '/admin/settings':      'Platform Settings',
-  '/admin/chart':         'Live Chart',
   '/admin/sites':         'Sites',
 }
 

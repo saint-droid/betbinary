@@ -46,6 +46,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ candles })
   }
 
-  // Worker connecting — return empty, chart will stream live ticks shortly
+  // Worker still connecting — fall back to DB so chart has history on refresh
+  const { data: dbCandles } = await db
+    .from('price_feed')
+    .select('time_open, open, high, low, close')
+    .eq('pair_id', pairId)
+    .lte('time_open', new Date().toISOString())
+    .order('time_open', { ascending: false })
+    .limit(limit)
+
+  if (dbCandles && dbCandles.length > 0) {
+    return NextResponse.json({ candles: dbCandles.reverse() })
+  }
+
   return NextResponse.json({ candles: [] })
 }

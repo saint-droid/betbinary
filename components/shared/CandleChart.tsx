@@ -57,7 +57,7 @@ function cleanBars(raw: Bar[]): Bar[] {
 }
 
 const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
-  { historicalCandles, pairId, candleDuration, onTick, streamUrl = '/api/admin/chart/stream', entryPrice, visibleCandles = 120, loading = false },
+  { historicalCandles, pairId, candleDuration, onTick, streamUrl = '/api/chart/stream', entryPrice, visibleCandles = 120, loading = false },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -142,14 +142,14 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
       rightPriceScale: {
         borderColor: 'rgba(255,255,255,0.06)',
         scaleMargins: { top: 0.15, bottom: 0.1 },
-        minimumWidth: 80,
+        minimumWidth: 60,
         textColor: 'rgba(148,163,184,0.7)',
       },
       timeScale: {
         borderColor: 'rgba(255,255,255,0.06)',
         timeVisible: true,
         secondsVisible: true,
-        rightOffset: 5,
+        rightOffset: 0,
         barSpacing: barSpacingRef.current,
         minBarSpacing: 1,
       },
@@ -275,7 +275,7 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
     }
 
     programmingScrollRef.current = true
-    chart.timeScale().applyOptions({ barSpacing: barSpacingRef.current, rightOffset: 5 })
+    chart.timeScale().applyOptions({ barSpacing: barSpacingRef.current, rightOffset: 0 })
     chart.timeScale().scrollToRealTime()
     requestAnimationFrame(() => { programmingScrollRef.current = false })
   }, [historicalCandles]) // eslint-disable-line react-hooks/exhaustive-deps
