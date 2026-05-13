@@ -42,21 +42,21 @@ export async function GET(req: NextRequest) {
   const total_users = allUsers?.length ?? 0
   const active_today = (allUsers || []).filter((u: any) => u.last_login && u.last_login >= todayISO).length
 
-  const completedDeposits = (allDeposits || []).filter(d => d.status === 'completed')
-  const realDeposits = completedDeposits.filter(d => d.mpesa_transaction_id && d.phone !== 'MANUAL')
-  const manualDeposits = completedDeposits.filter(d => d.phone === 'MANUAL')
-  const deposits_alltime_kes = realDeposits.reduce((s, d) => s + Number(d.amount_kes), 0)
-  const deposits_today_kes = realDeposits.filter(d => d.created_at >= todayISO).reduce((s, d) => s + Number(d.amount_kes), 0)
-  const manual_credits_today_kes = manualDeposits.filter(d => d.created_at >= todayISO).reduce((s, d) => s + Number(d.amount_kes), 0)
-  const manual_credits_alltime_kes = manualDeposits.reduce((s, d) => s + Number(d.amount_kes), 0)
+  const completedDeposits = (allDeposits || []).filter((d: any) => d.status === 'completed')
+  const realDeposits = completedDeposits.filter((d: any) => d.mpesa_transaction_id && d.phone !== 'MANUAL')
+  const manualDeposits = completedDeposits.filter((d: any) => d.phone === 'MANUAL')
+  const deposits_alltime_kes = realDeposits.reduce((s: number, d: any) => s + Number(d.amount_kes), 0)
+  const deposits_today_kes = realDeposits.filter((d: any) => d.created_at >= todayISO).reduce((s: number, d: any) => s + Number(d.amount_kes), 0)
+  const manual_credits_today_kes = manualDeposits.filter((d: any) => d.created_at >= todayISO).reduce((s: number, d: any) => s + Number(d.amount_kes), 0)
+  const manual_credits_alltime_kes = manualDeposits.reduce((s: number, d: any) => s + Number(d.amount_kes), 0)
 
-  const realWithdrawals = (allWithdrawals || []).filter(w => w.phone !== 'tournament')
-  const completedWithdrawals = realWithdrawals.filter(w => w.status === 'completed')
-  const withdrawals_alltime_kes = completedWithdrawals.reduce((s, w) => s + Number(w.amount_kes), 0)
-  const withdrawals_today_kes = completedWithdrawals.filter(w => w.created_at >= todayISO).reduce((s, w) => s + Number(w.amount_kes), 0)
-  const pending_withdrawals = realWithdrawals.filter(w => ['pending', 'approved', 'processing'].includes(w.status)).length
+  const realWithdrawals = (allWithdrawals || []).filter((w: any) => w.phone !== 'tournament')
+  const completedWithdrawals = realWithdrawals.filter((w: any) => w.status === 'completed')
+  const withdrawals_alltime_kes = completedWithdrawals.reduce((s: number, w: any) => s + Number(w.amount_kes), 0)
+  const withdrawals_today_kes = completedWithdrawals.filter((w: any) => w.created_at >= todayISO).reduce((s: number, w: any) => s + Number(w.amount_kes), 0)
+  const pending_withdrawals = realWithdrawals.filter((w: any) => ['pending', 'approved', 'processing'].includes(w.status)).length
 
-  const trades_today = (allTrades || []).filter(t => t.created_at >= todayISO).length
+  const trades_today = (allTrades || []).filter((t: any) => t.created_at >= todayISO).length
 
   // Platform profit = completed M-Pesa deposits minus completed M-Pesa withdrawals
   const platform_profit_kes = deposits_alltime_kes - withdrawals_alltime_kes
