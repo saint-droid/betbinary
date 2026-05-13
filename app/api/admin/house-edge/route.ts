@@ -20,8 +20,8 @@ export async function GET() {
       .eq('outcome', 'pending'),
   ])
 
-  const buyVolume = activeTrades?.filter(t => t.direction === 'buy').reduce((s, t) => s + Number(t.amount_usd), 0) || 0
-  const sellVolume = activeTrades?.filter(t => t.direction === 'sell').reduce((s, t) => s + Number(t.amount_usd), 0) || 0
+  const buyVolume = activeTrades?.filter((t: any) => t.direction === 'buy').reduce((s: number, t: any) => s + Number(t.amount_usd), 0) || 0
+  const sellVolume = activeTrades?.filter((t: any) => t.direction === 'sell').reduce((s: number, t: any) => s + Number(t.amount_usd), 0) || 0
 
   return NextResponse.json({ settings, overrides, activeTrades, buyVolume, sellVolume })
 }
