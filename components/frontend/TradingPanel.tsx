@@ -213,12 +213,12 @@ export default function TradingPanel({
             <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Trade Mode</span>
             <span className="text-[10px] text-gray-500">{tradeMode === 'auto' ? 'Runs until target hit' : 'One trade per click'}</span>
           </div>
-          <div className="grid grid-cols-2 bg-[#151c2c] sm:rounded-xl rounded-md p-1 border border-[#1e2d40]">
+          <div className="grid grid-cols-2 bg-[#151c2c] sm:rounded-md rounded-md p-1 border border-[#1e2d40]">
             {(['auto', 'manual'] as const).map(m => (
               <button key={m}
                 disabled={anyActive}
                 onClick={() => setTradeMode(m)}
-                className={`sm:py-2 py-1  sm:rounded-lg rounded-md text-sm font-semibold transition-all disabled:cursor-not-allowed ${tradeMode === m ? 'bg-[#252D3D] text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>
+                className={`sm:py-1 py-1  sm:rounded-md rounded-md text-sm font-semibold transition-all disabled:cursor-not-allowed ${tradeMode === m ? 'bg-[#252D3D] text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>
                 {m.charAt(0).toUpperCase() + m.slice(1)}
               </button>
             ))}
@@ -269,10 +269,10 @@ export default function TradingPanel({
 
         {/* Stake / Payout tabs + amount row */}
         <div className="sm:px-4 px-1.5 sm:py-3 py-1.5 sm:border-b border-[#1e2d40] shrink-0">
-          <div className="hidden sm:grid grid-cols-2 gap-1 mb-3 bg-[#151c2c] rounded-lg p-1">
+          <div className="hidden sm:grid grid-cols-2 gap-1 mb-3 bg-[#151c2c] rounded-md p-1">
             {(['stake', 'payout'] as const).map(t => (
               <button key={t} onClick={() => setStakeTab(t)}
-                className={`py-2 rounded-md text-sm font-semibold transition-colors ${stakeTab === t ? 'bg-[#1e2d40] text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>
+                className={`py-1 rounded-md text-sm font-semibold transition-colors ${stakeTab === t ? 'bg-[#1e2d40] text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>
                 {t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
@@ -298,7 +298,7 @@ export default function TradingPanel({
             </div>
 
             {/* AI Scanner */}
-            <button onClick={onScannerOpen} className="flex flex-col items-center justify-center px-3 sm:py-2.5 py-1 rounded-lg bg-[#1e1040] border border-[#4f46e5]/40 hover:border-[#4f46e5] transition-colors shrink-0 gap-0.5">
+            <button onClick={onScannerOpen} className="flex flex-col items-center justify-center px-3 sm:py-1.5 py-1 rounded-lg bg-[#1e1040] border border-[#4f46e5]/40 hover:border-[#4f46e5] transition-colors shrink-0 gap-0.5">
               <div className="flex items-center gap-1">
                 <Cpu className="w-3.5 h-3.5 text-[#818cf8]" />
                 <span className="text-xs font-bold text-[#818cf8]">AI</span>
@@ -344,9 +344,9 @@ export default function TradingPanel({
 
         {/* LIVE session stats */}
         {sessionStats && (sessionStats.wins > 0 || sessionStats.losses > 0) && (
-          <div className="rounded-lg bg-[#151c2c] border border-[#1e2d40] px-3 py-2">
-            <div className="flex items-center justify-between mb-1">
-              <span className="flex items-center gap-1.5 text-[10px] font-bold text-gray-300">
+          <div className="rounded-md bg-[#151c2c] border border-[#1e2d40] px-2 py-1">
+            <div className="flex items-center justify-between mb-0">
+              <span className="flex items-center gap-1.5 text-[10px] font-semibold text-gray-300">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse inline-block" />
                 TODAY · {sessionStats.wins}W · {sessionStats.losses}L
               </span>
@@ -354,7 +354,7 @@ export default function TradingPanel({
                 {sessionStats.pnlUsd >= 0 ? '+' : ''}${sessionStats.pnlUsd.toFixed(2)}
               </span>
             </div>
-            <div className="text-[10px] text-gray-500">Stake <span className="text-gray-400">${sessionStats.totalStakeUsd.toFixed(2)}</span></div>
+            {/* <div className="text-[10px] text-gray-500">Stake <span className="text-gray-400">${sessionStats.totalStakeUsd.toFixed(2)}</span></div> */}
           </div>
         )}
 

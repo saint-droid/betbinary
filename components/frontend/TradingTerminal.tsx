@@ -131,9 +131,11 @@ function TradeCard({ trade, symbol, isOpen, isFlash = false }: { trade: any; sym
   )
 }
 
-export default function TradingTerminal({ settings: initialSettings, pairs = [], news }: any) {
+export default function TradingTerminal({ settings: initialSettings, pairs: initialPairs = [], news }: any) {
   const [liveSettings, setLiveSettings] = useState<any>(null)
   const settings = liveSettings ?? initialSettings
+
+  const [pairs, setPairs] = useState<any[]>(initialPairs)
 
   const [user, setUser] = useState<any>(null)
   const [userLoading, setUserLoading] = useState(true)
@@ -142,7 +144,7 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
   const [demoBalanceUsd, setDemoBalanceUsd] = useState<number>(() => Number(initialSettings?.demo_starting_balance) || 1000)
   const [localCurrency, setLocalCurrency] = useState(initialSettings?.default_currency || 'USD')
 
-  // Fetch fresh settings on mount so currency/switcher changes apply without page reload
+  // Fetch settings + pairs on mount — no server-side blocking needed
   useEffect(() => {
     fetch('/api/settings').then(r => r.json()).then(d => {
       if (d.settings) {
@@ -151,12 +153,23 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
         if (d.settings.demo_starting_balance) setDemoBalanceUsd(Number(d.settings.demo_starting_balance))
       }
     }).catch(() => {})
+
+    if (initialPairs.length === 0) {
+      fetch('/api/pairs').then(r => r.json()).then(d => {
+        if (d.pairs?.length) setPairs(d.pairs)
+      }).catch(() => {})
+    }
   }, [])
 
   // Active pair — default to first pair
   const [selectedPairId, setSelectedPairId] = useState<string>(pairs[0]?.id || '')
   const [switching, setSwitching] = useState(false)
   const pair = pairs.find((p: any) => p.id === selectedPairId) || pairs[0] || null
+
+  // Sync selectedPairId when pairs load client-side after initial render
+  useEffect(() => {
+    if (!selectedPairId && pairs[0]?.id) setSelectedPairId(pairs[0].id)
+  }, [pairs])
 
   const [historicalCandles, setHistoricalCandles] = useState<any[]>([])
 
@@ -689,7 +702,7 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
 
   function fetchHistoryTrades() {
     setHistoryLoading(true)
-    fetch('/api/history?type=trades&limit=100')
+    fetch(`/api/history?type=trades&limit=100&demo=${isDemoMode}`)
       .then(r => r.json())
       .then(d => setHistoryTrades(d.trades || []))
       .catch(() => {})
@@ -699,17 +712,17 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
   // Fetch when switching to closed/transactions on desktop
   useEffect(() => {
     if (positionsTab === 'closed' || positionsTab === 'transactions') fetchHistoryTrades()
-  }, [positionsTab])
+  }, [positionsTab, isDemoMode])
 
   // Fetch when switching to closed/transactions on mobile
   useEffect(() => {
     if (mobilePosTab === 'closed' || mobilePosTab === 'transactions') fetchHistoryTrades()
-  }, [mobilePosTab])
+  }, [mobilePosTab, isDemoMode])
 
   // Also fetch when positions tab becomes visible on mobile
   useEffect(() => {
     if (mobileTab === 'positions') fetchHistoryTrades()
-  }, [mobileTab])
+  }, [mobileTab, isDemoMode])
 
   const [pairDropdownOpen, setPairDropdownOpen] = useState(false)
 

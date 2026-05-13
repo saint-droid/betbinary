@@ -120,10 +120,10 @@ export default function Header({
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition-colors">
           <Home className="w-3.5 h-3.5" /> Trader's Hub
         </Link>
-        <Link href="/dashboard/deposit"
+        {/* <Link href="/dashboard/deposit"
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-[#22c55e] hover:bg-[#22c55e]/10 transition-colors">
           <DollarSign className="w-3.5 h-3.5" /> Deposit
-        </Link>
+        </Link> */}
         <Link href="/dashboard/withdraw"
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-400 hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors">
           <Send className="w-3.5 h-3.5" /> Withdraw

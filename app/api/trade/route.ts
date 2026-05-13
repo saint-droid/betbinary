@@ -1,11 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/user-auth'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabase = createAdminClient()
 
 export async function POST(req: NextRequest) {
   try {
@@ -107,7 +104,7 @@ export async function POST(req: NextRequest) {
     // Debit stake immediately
     await supabase.rpc('fn_debit_balance', { p_user_id: user.id, p_amount: stakeUsd, p_is_demo: false })
 
-    // Resolve after duration — outcome already decided
+    // Resolve after duration â€” outcome already decided
     setTimeout(async () => {
       const { data: latestCandle } = await supabase
         .from('price_feed').select('close').eq('pair_id', pairId)
@@ -115,7 +112,7 @@ export async function POST(req: NextRequest) {
       const exitPrice = Number(latestCandle?.close ?? entryPrice)
 
       const outcome = isWin ? 'win' : 'loss'
-      // Win: stake × multiplier (full profit). Loss: 0 returned.
+      // Win: stake Ã— multiplier (full profit). Loss: 0 returned.
       const payout = isWin ? stakeUsd * payoutMultiplier : 0
 
       await supabase.from('trades').update({
@@ -241,3 +238,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
+

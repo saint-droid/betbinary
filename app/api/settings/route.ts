@@ -12,5 +12,8 @@ export async function GET() {
       : Promise.resolve({ data: null }),
   ])
 
-  return NextResponse.json({ settings: { ...(platform || {}), ...(site || {}) } })
+  return NextResponse.json(
+    { settings: { ...(platform || {}), ...(site || {}) } },
+    { headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=60' } }
+  )
 }

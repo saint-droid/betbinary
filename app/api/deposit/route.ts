@@ -1,14 +1,11 @@
-// @ts-nocheck
+﻿// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase'
 import { getUserSession } from '@/lib/user-auth'
 import { initiateStkPush } from '@/lib/mpesa'
 import { getSiteId } from '@/lib/site'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabase = createAdminClient()
 
 async function applyBonus(userId: string, bonusUsd: number, tradesRequired: number, expiryHours: number) {
   const expiresAt = new Date(Date.now() + expiryHours * 3600 * 1000).toISOString()

@@ -1,11 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+﻿import { NextRequest, NextResponse } from 'next/server'
+import { createAdminClient } from '@/lib/supabase'
 import { getUserSession } from '@/lib/user-auth'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabase = createAdminClient()
 
 export async function GET(req: NextRequest) {
   const session = await getUserSession()
@@ -16,10 +13,12 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(Number(searchParams.get('limit') || '50'), 100)
 
   if (type === 'trades') {
+    const isDemo = searchParams.get('demo') === 'true'
     const { data, error } = await supabase
       .from('trades')
       .select('id,direction,amount_kes,amount_usd,entry_price,exit_price,outcome,payout_usd,is_demo,created_at,resolved_at,pair_id')
       .eq('user_id', session.id)
+      .eq('is_demo', isDemo)
       .order('created_at', { ascending: false })
       .limit(limit)
 
