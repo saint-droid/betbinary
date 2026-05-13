@@ -7,16 +7,13 @@ import { Toaster } from "@/components/ui/sonner"
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] })
 
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = createAdminClient()
     const siteId = process.env.NEXT_PUBLIC_SITE_ID
     const { data } = siteId
       ? await supabase.from('site_settings').select('site_name, site_title, favicon_url').eq('site_id', siteId).single()

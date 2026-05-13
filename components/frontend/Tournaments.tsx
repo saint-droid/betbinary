@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Trophy, Clock, ChevronRight, X, DollarSign, CheckCircle2, Loader2, UserPlus, UserCheck, Heart, Lock, TrendingUp, BarChart2, Star, ArrowLeft } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
@@ -606,10 +606,11 @@ function TraderAvatar({ seed, name, size = 28 }: { seed: string; name: string; s
   )
 }
 
-export default function Tournaments({ onBalanceDeducted, user, onLoginClick }: { onBalanceDeducted?: () => void; user?: any; onLoginClick?: () => void } = {}) {
+export default function Tournaments({ onBalanceDeducted, user, onLoginClick, visible = true }: { onBalanceDeducted?: () => void; user?: any; onLoginClick?: () => void; visible?: boolean } = {}) {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Tournament | null>(null)
+  const loadedRef = useRef(false)
 
   const isLoggedIn = !!user
 
@@ -632,8 +633,13 @@ export default function Tournaments({ onBalanceDeducted, user, onLoginClick }: {
       .catch(() => setLoading(false))
   }, [])
 
-  // Initial load
-  useEffect(() => { load() }, [load])
+  // Load on first becoming visible
+  useEffect(() => {
+    if (!visible || loadedRef.current) return
+    loadedRef.current = true
+    setLoading(true)
+    load()
+  }, [visible, load])
 
   // Realtime — fires instantly when a real user joins or a trade updates result_balance
   useEffect(() => {

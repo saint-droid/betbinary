@@ -36,6 +36,7 @@ interface HeaderProps {
   activeCurrency?: string
   toggleCurrency?: () => void
   onLogout?: () => void
+  initialNotifications?: any[]
 }
 
 const drawerNavItems = [
@@ -58,12 +59,12 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 export default function Header({
   user, userLoading = false, isDemoMode, demoBalanceUsd, onLoginClick, onRegisterClick, onHowToTradeClick,
   onTopTradersClick, onTournamentsClick, onToggleDemo,
-  settings, activeCurrency = 'USD', toggleCurrency, onLogout,
+  settings, activeCurrency = 'USD', toggleCurrency, onLogout, initialNotifications = [],
 }: HeaderProps) {
   const [sheetOpen, setSheetOpen]           = useState(false)
   const [accountOpen, setAccountOpen]       = useState(false)
   const [notifOpen, setNotifOpen]           = useState(false)
-  const [notifications, setNotifications]   = useState<any[]>([])
+  const [notifications]   = useState<any[]>(initialNotifications)
   const accountRef = useRef<HTMLDivElement>(null)
   const notifRef   = useRef<HTMLDivElement>(null)
 
@@ -79,10 +80,6 @@ export default function Header({
   const siteName: string = settings?.site_name || 'BetaBinary'
   const [first, ...rest] = siteName.split(' ')
 
-  // Load notifications
-  useEffect(() => {
-    fetch('/api/notifications').then(r => r.json()).then(d => setNotifications(d.notifications || [])).catch(() => {})
-  }, [])
 
   // Close dropdowns on outside click
   useEffect(() => {

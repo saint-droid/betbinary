@@ -144,21 +144,21 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
   const [demoBalanceUsd, setDemoBalanceUsd] = useState<number>(() => Number(initialSettings?.demo_starting_balance) || 1000)
   const [localCurrency, setLocalCurrency] = useState(initialSettings?.default_currency || 'USD')
 
-  // Fetch settings + pairs on mount — no server-side blocking needed
+  // Single boot fetch — settings + pairs + user + stats + notifications + wins
   useEffect(() => {
-    fetch('/api/settings').then(r => r.json()).then(d => {
+    fetch('/api/boot').then(r => r.json()).then(d => {
       if (d.settings) {
         setLiveSettings((prev: any) => ({ ...(prev ?? initialSettings), ...d.settings }))
         setLocalCurrency(d.settings.default_currency || 'USD')
         if (d.settings.demo_starting_balance) setDemoBalanceUsd(Number(d.settings.demo_starting_balance))
       }
-    }).catch(() => {})
-
-    if (initialPairs.length === 0) {
-      fetch('/api/pairs').then(r => r.json()).then(d => {
-        if (d.pairs?.length) setPairs(d.pairs)
-      }).catch(() => {})
-    }
+      if (d.pairs?.length) setPairs(d.pairs)
+      if (d.user) setUser(d.user)
+      if (d.stats) setRealStats(d.stats)
+      if (d.notifications) setBootNotifications(d.notifications)
+      if (d.wins) setBootWins(d.wins)
+      setUserLoading(false)
+    }).catch(() => { setUserLoading(false) })
   }, [])
 
   // Active pair — default to first pair
@@ -211,25 +211,11 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
   const [howToTradeOpen, setHowToTradeOpen] = useState(false)
   const [scannerOpen, setScannerOpen] = useState(false)
 
+  const [bootNotifications, setBootNotifications] = useState<any[]>([])
+  const [bootWins, setBootWins] = useState<any[]>([])
+
   // Active tournament mini-state for the stats bar pill
   const [activeTournament, setActiveTournament] = useState<{ name: string; participant_count: number; joined: boolean } | null>(null)
-  useEffect(() => {
-    fetch('/api/tournaments')
-      .then(r => r.json())
-      .then(d => {
-        const active = (d.tournaments || []).find((t: any) => t.status === 'active')
-        if (active) setActiveTournament({ name: active.name, participant_count: active.participant_count, joined: active.joined })
-      })
-      .catch(() => {})
-  }, [user])
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => { if (data.user) setUser(data.user) })
-      .catch(console.error)
-      .finally(() => setUserLoading(false))
-  }, [])
 
   const refreshUser = useCallback(() => {
     fetch('/api/auth/me').then(r => r.json()).then(d => { if (d.user) setUser(d.user) }).catch(() => {})
@@ -261,14 +247,6 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
     return () => clearInterval(id)
   }, [])
 
-  // Fetch today's real trade stats when user is loaded
-  useEffect(() => {
-    if (!user) { setRealStats(null); return }
-    fetch('/api/trade/stats')
-      .then(r => r.json())
-      .then(d => { if (!d.error) setRealStats(d) })
-      .catch(() => {})
-  }, [user?.id])
 
   // Chat simulation
   useEffect(() => {
@@ -734,6 +712,7 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
         settings={settings}
         isDemoMode={isDemoMode}
         demoBalanceUsd={demoBalanceUsd}
+        initialNotifications={bootNotifications}
         onToggleDemo={() => setDemoOverride(v => !v)}
         activeCurrency={activeCurrency}
         toggleCurrency={toggleCurrency}
@@ -883,8 +862,8 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
               )}
             </div>
           </div>
-          <div className={`absolute inset-0 ${mobileTab === 'leaders' ? 'block' : 'hidden'}`}><Leaderboard conversionRate={conversionRate} currency={activeCurrency} /></div>
-          <div className={`absolute inset-0 ${mobileTab === 'tournaments' ? 'block' : 'hidden'}`}><Tournaments onBalanceDeducted={refreshUser} user={user} onLoginClick={() => openAuth('login')} /></div>
+          <div className={`absolute inset-0 ${mobileTab === 'leaders' ? 'block' : 'hidden'}`}><Leaderboard conversionRate={conversionRate} currency={activeCurrency} visible={mobileTab === 'leaders'} /></div>
+          <div className={`absolute inset-0 ${mobileTab === 'tournaments' ? 'block' : 'hidden'}`}><Tournaments onBalanceDeducted={refreshUser} user={user} onLoginClick={() => openAuth('login')} visible={mobileTab === 'tournaments'} /></div>
         </div>
         <div className="h-12 shrink-0 flex border-t border-[#1e2d40] bg-[#0e1320]">
           {[
@@ -1107,7 +1086,7 @@ export default function TradingTerminal({ settings: initialSettings, pairs: init
         onSuccess={(u) => { setUser(u); setAuthModalOpen(false) }} />
       <HowToTradeModal isOpen={howToTradeOpen} onClose={() => setHowToTradeOpen(false)}
         steps={settings?.how_to_trade_steps || []} settings={settings} />
-      <WinningToast siteName={settings?.site_name || 'BetaBinary'} />
+      <WinningToast siteName={settings?.site_name || 'BetaBinary'} initialSettings={settings} initialWins={bootWins} />
       {autoStopResult && (
         <AutoStopModal
           result={autoStopResult}

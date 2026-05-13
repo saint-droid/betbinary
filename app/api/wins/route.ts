@@ -24,5 +24,5 @@ export async function GET() {
     amount: Math.round(Number(w.amount)),
   })).filter((w: any) => w.amount >= 100)
 
-  return NextResponse.json({ wins })
+  return NextResponse.json({ wins }, { headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=120' } })
 }

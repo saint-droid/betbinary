@@ -52,5 +52,5 @@ export async function GET(req: NextRequest) {
     trades: Number(t[tCol]),
   }))
 
-  return NextResponse.json({ traders, period })
+  return NextResponse.json({ traders, period }, { headers: { 'Cache-Control': 's-maxage=30, stale-while-revalidate=120' } })
 }

@@ -35,5 +35,8 @@ export async function GET() {
       .single(),
   ])
 
-  return NextResponse.json({ ...(platform as object || {}), ...(site as object || {}) })
+  return NextResponse.json(
+    { ...(platform as object || {}), ...(site as object || {}) },
+    { headers: { 'Cache-Control': 's-maxage=60, stale-while-revalidate=300' } }
+  )
 }

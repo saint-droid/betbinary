@@ -45,18 +45,21 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="text-xs font-bold text-gray-500 w-5 text-center">#{rank}</span>
 }
 
-export default function Leaderboard({ conversionRate = 129, currency = 'KES' }: { conversionRate?: number; currency?: string }) {
+export default function Leaderboard({ conversionRate = 129, currency = 'KES', visible = true }: { conversionRate?: number; currency?: string; visible?: boolean }) {
   const [period, setPeriod] = useState<Period>('today')
   const [traders, setTraders] = useState<Trader[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [fetched, setFetched] = useState(false)
 
   useEffect(() => {
+    if (!visible && !fetched) return
+    setFetched(true)
     setLoading(true)
     fetch(`/api/leaderboard?period=${period}`)
       .then(r => r.json())
       .then(d => { setTraders(d.traders || []); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [period])
+  }, [period, visible])
 
   const symbol = currency === 'USD' ? '$' : 'KSh'
   const rate = currency === 'USD' ? 1 : conversionRate

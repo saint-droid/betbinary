@@ -158,5 +158,8 @@ export async function GET() {
     }
   })
 
-  return NextResponse.json({ tournaments, isLoggedIn: !!session })
+  return NextResponse.json(
+    { tournaments, isLoggedIn: !!session },
+    { headers: { 'Cache-Control': 's-maxage=10, stale-while-revalidate=60' } }
+  )
 }

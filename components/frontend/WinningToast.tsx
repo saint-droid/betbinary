@@ -39,40 +39,44 @@ interface WinEntry {
   isReal: boolean
 }
 
-export default function WinningToast({ siteName = 'NEKTA FX' }: { siteName?: string }) {
+export default function WinningToast({
+  siteName = 'NEKTA FX',
+  initialSettings,
+  initialWins,
+}: {
+  siteName?: string
+  initialSettings?: any
+  initialWins?: { name: string; amount: number }[]
+}) {
   const [toasts, setToasts] = useState<WinEntry[]>([])
   const counterRef = useRef(0)
-  const realWinsRef = useRef<{ name: string; amount: number }[]>([])
+  const realWinsRef = useRef<{ name: string; amount: number }[]>(initialWins || [])
   const cfgRef = useRef({
-    enabled: true,
-    minSecs: 6,
-    maxSecs: 14,
-    realPct: 40,
-    minAmt: 100,
-    maxAmt: 10000,
+    enabled: initialSettings?.winning_toast_enabled ?? true,
+    minSecs: initialSettings?.winning_toast_interval_min_secs ?? 6,
+    maxSecs: initialSettings?.winning_toast_interval_max_secs ?? 14,
+    realPct: initialSettings?.winning_toast_real_win_pct ?? 40,
+    minAmt: initialSettings?.winning_toast_min_amount ?? 100,
+    maxAmt: initialSettings?.winning_toast_max_amount ?? 10000,
   })
 
-  // Fetch settings + real wins on mount
+  // Sync if boot data arrives after mount
   useEffect(() => {
-    fetch('/api/settings/public')
-      .then(r => r.json())
-      .then(d => {
-        cfgRef.current = {
-          enabled: d.winning_toast_enabled ?? true,
-          minSecs: d.winning_toast_interval_min_secs ?? 6,
-          maxSecs: d.winning_toast_interval_max_secs ?? 14,
-          realPct: d.winning_toast_real_win_pct ?? 40,
-          minAmt: d.winning_toast_min_amount ?? 100,
-          maxAmt: d.winning_toast_max_amount ?? 10000,
-        }
-      })
-      .catch(() => {})
+    if (initialSettings) {
+      cfgRef.current = {
+        enabled: initialSettings.winning_toast_enabled ?? true,
+        minSecs: initialSettings.winning_toast_interval_min_secs ?? 6,
+        maxSecs: initialSettings.winning_toast_interval_max_secs ?? 14,
+        realPct: initialSettings.winning_toast_real_win_pct ?? 40,
+        minAmt: initialSettings.winning_toast_min_amount ?? 100,
+        maxAmt: initialSettings.winning_toast_max_amount ?? 10000,
+      }
+    }
+  }, [initialSettings])
 
-    fetch('/api/wins')
-      .then(r => r.json())
-      .then(d => { realWinsRef.current = d.wins || [] })
-      .catch(() => {})
-  }, [])
+  useEffect(() => {
+    if (initialWins) realWinsRef.current = initialWins
+  }, [initialWins])
 
   useEffect(() => {
     function spawn() {

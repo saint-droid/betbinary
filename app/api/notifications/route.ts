@@ -9,6 +9,6 @@ export async function GET() {
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
 
-  if (error) return NextResponse.json({ notifications: [] })
-  return NextResponse.json({ notifications: data || [] })
+  if (error) return NextResponse.json({ notifications: [] }, { headers: { 'Cache-Control': 's-maxage=120, stale-while-revalidate=600' } })
+  return NextResponse.json({ notifications: data || [] }, { headers: { 'Cache-Control': 's-maxage=120, stale-while-revalidate=600' } })
 }
