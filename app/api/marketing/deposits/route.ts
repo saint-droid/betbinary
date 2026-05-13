@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const actualTotal = (data || []).reduce((sum, d) => sum + (d.amount_kes || 0), 0)
+  const actualTotal = (data || []).reduce((sum: number, d: any) => sum + (d.amount_kes || 0), 0)
   const displayTotal = Math.floor(actualTotal * (marketerPct / 100))
   // Marketer earns 50% of what they see displayed, which is marketerPct% of actual
   const commissionDisplayPct = 50

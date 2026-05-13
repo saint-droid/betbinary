@@ -28,13 +28,13 @@ export async function GET() {
     .select('amount_usd,status')
     .eq('beneficiary_id', session.id)
 
-  const totalCommission = (commissions || []).reduce((s, c) => s + Number(c.amount_usd), 0)
+  const totalCommission = (commissions || []).reduce((s: number, c: any) => s + Number(c.amount_usd), 0)
   const pendingCommission = (commissions || [])
-    .filter(c => c.status === 'pending')
-    .reduce((s, c) => s + Number(c.amount_usd), 0)
+    .filter((c: any) => c.status === 'pending')
+    .reduce((s: number, c: any) => s + Number(c.amount_usd), 0)
   const paidCommission = (commissions || [])
-    .filter(c => c.status === 'paid')
-    .reduce((s, c) => s + Number(c.amount_usd), 0)
+    .filter((c: any) => c.status === 'paid')
+    .reduce((s: number, c: any) => s + Number(c.amount_usd), 0)
 
   // Recent referrals — mask username for privacy
   const { data: referred } = await supabase
@@ -68,7 +68,7 @@ export async function GET() {
     return phone.slice(0, 3) + '****' + phone.slice(-2)
   }
 
-  const referrals = (referred || []).map(u => ({
+  const referrals = (referred || []).map((u: any) => ({
     id: u.id,
     display_name: maskUsername(u.username),
     display_phone: maskPhone(u.phone || ''),

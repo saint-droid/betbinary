@@ -20,7 +20,7 @@ export async function GET() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Get messages for these tickets
-  const ticketIds = (tickets || []).map(t => t.id)
+  const ticketIds = (tickets || []).map((t: any) => t.id)
   const { data: messages } = ticketIds.length
     ? await supabase
         .from('ticket_messages')
@@ -30,10 +30,10 @@ export async function GET() {
     : { data: [] }
 
   // Attach user message and latest admin reply to each ticket
-  const result = (tickets || []).map(ticket => {
-    const msgs = (messages || []).filter(m => m.ticket_id === ticket.id)
-    const userMsg = msgs.find(m => m.sender_type === 'user')
-    const adminReply = [...msgs].reverse().find(m => m.sender_type === 'admin')
+  const result = (tickets || []).map((ticket: any) => {
+    const msgs = (messages || []).filter((m: any) => m.ticket_id === ticket.id)
+    const userMsg = msgs.find((m: any) => m.sender_type === 'user')
+    const adminReply = [...msgs].reverse().find((m: any) => m.sender_type === 'admin')
 
     // Map DB status to UI status
     const statusMap: Record<string, string> = {

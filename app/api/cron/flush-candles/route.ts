@@ -43,5 +43,5 @@ export async function GET(req: NextRequest) {
     results[pair.symbol] = await generateAndPersist(pair.id, count)
   }
 
-  return NextResponse.json({ ok: true, flushed: pairs.map(p => p.symbol), results })
+  return NextResponse.json({ ok: true, flushed: (pairs as any[]).map((p: any) => p.symbol), results })
 }

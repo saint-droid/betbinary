@@ -191,10 +191,10 @@ export async function getOrCreateSim(pairId: string): Promise<PairSim | null> {
     .order('time_open', { ascending: false })
     .limit(2)
 
-  const currentCandleRow = recentRows?.find(r =>
+  const currentCandleRow = recentRows?.find((r: any) =>
     Math.floor(new Date(r.time_open).getTime() / 1000) === currentCandleStart
   )
-  const lastClosedRow = recentRows?.find(r =>
+  const lastClosedRow = recentRows?.find((r: any) =>
     Math.floor(new Date(r.time_open).getTime() / 1000) !== currentCandleStart
   ) ?? recentRows?.[0]
 

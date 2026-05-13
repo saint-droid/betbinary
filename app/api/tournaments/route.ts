@@ -102,7 +102,7 @@ export async function GET() {
 
   const nowMs = Date.now()
 
-  const tournaments = (data || []).map(t => {
+  const tournaments = (data || []).map((t: any) => {
     const joined = session ? joinedSet.has(t.id) : false
     const allEntries: any[] = (t.tournament_entries || [])
 

@@ -22,7 +22,7 @@ export async function GET() {
   const wins = (data || []).map((w: any) => ({
     name: w.users?.username || 'User',
     amount: Math.round(Number(w.amount)),
-  })).filter(w => w.amount >= 100)
+  })).filter((w: any) => w.amount >= 100)
 
   return NextResponse.json({ wins })
 }

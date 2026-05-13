@@ -35,7 +35,7 @@ export async function GET() {
   ])
 
   const rate = Number(settings?.conversion_rate ?? 129)
-  const redeemedIds = new Set((redemptions || []).map(r => r.promo_id))
+  const redeemedIds = new Set((redemptions || []).map((r: any) => r.promo_id))
   const welcomeClaimed = (completedDeposits as any)?.count > 0 || false
 
   const offers = []
