@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
   // Compute stats
   const total_users = allUsers?.length ?? 0
-  const active_today = (allUsers || []).filter(u => u.last_login && u.last_login >= todayISO).length
+  const active_today = (allUsers || []).filter((u: any) => u.last_login && u.last_login >= todayISO).length
 
   const completedDeposits = (allDeposits || []).filter(d => d.status === 'completed')
   const realDeposits = completedDeposits.filter(d => d.mpesa_transaction_id && d.phone !== 'MANUAL')
