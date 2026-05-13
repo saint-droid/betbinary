@@ -175,12 +175,12 @@ export default function TradingPanel({
         </div>
 
         {/* Trade type selector */}
-        <div className="sm:px-0 px-1.5 sm:py-0 py-1.5 sm:border-b border-[#1e2d40] shrink-0">
+        <div className="sm:px-0 px-0 sm:py-0 py-0 sm:border-b border-[#1e2d40] shrink-0">
           <div className="relative">
             <button
               disabled={anyActive}
               onClick={() => setTradeTypeOpen(v => !v)}
-              className="w-full flex items-center justify-between px-3 py-2.5 sm:rounded-none rounded-lg bg-[#151c2c] sm:border-none border border-[#1e2d40] hover:border-[#2a3a50] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-between px-3 py-2.5 sm:rounded-none rounded-none bg-[#151c2c] border-none  border-[#1e2d40] hover:border-[#2a3a50] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-2.5">
                 <span className="text-[#22c55e] text-sm">{selectedType.iconGreen}</span>
