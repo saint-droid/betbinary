@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { BarChart2, MessageSquare, Trophy, Medal, ChevronDown, LineChart, BarChart, Tag, Download, Clock } from 'lucide-react'
+import { BarChart2, MessageSquare, Trophy, Medal, ChevronDown, LineChart, BarChart, Tag, Download, Clock, Layers } from 'lucide-react'
 import PairTicker from './PairTicker'
 import Header from './Header'
 import NewsTicker from './NewsTicker'
@@ -275,7 +275,8 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
   }, [settings?.chat_simulation_enabled, settings?.chat_simulation_freq_min_secs, settings?.chat_simulation_freq_max_secs])
 
   // activeTrade: { id, amount, direction, status:'processing', startTime, entryPrice, outcome?, payout? }
-  const [mobileTab, setMobileTab] = useState<'trade' | 'chat' | 'leaders' | 'tournaments'>('trade')
+  const [mobileTab, setMobileTab] = useState<'trade' | 'positions' | 'leaders' | 'tournaments'>('trade')
+  const [mobilePosTab, setMobilePosTab] = useState<'open' | 'closed' | 'transactions'>('open')
   const [desktopTab, setDesktopTab] = useState<'chat' | 'leaders' | 'tournaments'>('chat')
   const [activeTrade, setActiveTrade] = useState<any>(null)
   const [closedTrades, setClosedTrades] = useState<any[]>([])
@@ -683,6 +684,33 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
   const sessionStats = isDemoMode ? demoStats : realStats
 
   const [positionsTab, setPositionsTab] = useState<'open' | 'closed' | 'transactions'>('open')
+  const [historyTrades, setHistoryTrades] = useState<any[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+
+  function fetchHistoryTrades() {
+    setHistoryLoading(true)
+    fetch('/api/history?type=trades&limit=100')
+      .then(r => r.json())
+      .then(d => setHistoryTrades(d.trades || []))
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false))
+  }
+
+  // Fetch when switching to closed/transactions on desktop
+  useEffect(() => {
+    if (positionsTab === 'closed' || positionsTab === 'transactions') fetchHistoryTrades()
+  }, [positionsTab])
+
+  // Fetch when switching to closed/transactions on mobile
+  useEffect(() => {
+    if (mobilePosTab === 'closed' || mobilePosTab === 'transactions') fetchHistoryTrades()
+  }, [mobilePosTab])
+
+  // Also fetch when positions tab becomes visible on mobile
+  useEffect(() => {
+    if (mobileTab === 'positions') fetchHistoryTrades()
+  }, [mobileTab])
+
   const [pairDropdownOpen, setPairDropdownOpen] = useState(false)
 
   return (
@@ -711,13 +739,55 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
       <div className="flex md:hidden flex-col flex-1 min-h-0 overflow-hidden">
         <div className="flex-1 min-h-0 overflow-hidden relative">
           <div className={`absolute inset-0 overflow-y-auto ${mobileTab === 'trade' ? 'block' : 'hidden'}`}>
-            <PairTicker pairs={pairs} selectedPairId={pair?.id} onSelect={setSelectedPairId} settings={settings} />
-            <div className="h-[340px] w-full bg-[#0e1320] shrink-0 relative">
+            <div className="h-[200px] w-full bg-[#0e1320] shrink-0 relative">
               <CandleChart key={pair?.id} ref={mobileChartRef} historicalCandles={historicalCandles}
                 pairId={pair?.id} candleDuration={1}
                 onTick={isMobile ? handleTick : undefined} streamUrl="/api/chart/stream"
                 entryPrice={null} visibleCandles={25} loading={switching} />
-              <DigitBar livePrice={livePrice} />
+              {/* Pair selector — same as desktop, overlaid top-left */}
+              <div className="absolute top-2 left-2 z-20">
+                <button
+                  onClick={() => setPairDropdownOpen(o => !o)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#0e1320]/90 border border-[#1e2d40] hover:border-[#2a3a50] transition-colors shadow-lg"
+                >
+                  <BarChart2 className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                  <div className="text-left">
+                    <div className="text-xs font-bold text-white leading-none">{pair?.display_name || pair?.symbol || 'Select Pair'}</div>
+                    <div className="text-[10px] leading-none mt-0.5 font-mono text-gray-400">
+                      {livePrice ? livePrice.toFixed(2) : '—'}
+                    </div>
+                  </div>
+                  <ChevronDown className={`w-3 h-3 text-gray-500 ml-0.5 shrink-0 transition-transform ${pairDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {pairDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setPairDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 mt-1 z-20 min-w-[190px] rounded-lg bg-[#0b1019] border border-[#1e2d40] shadow-2xl overflow-hidden">
+                      {pairs.map((p: any) => {
+                        const isSelected = p.id === selectedPairId
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => { setSelectedPairId(p.id); setPairDropdownOpen(false) }}
+                            className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[#1e2d40] ${isSelected ? 'bg-[#1e2d40]' : ''}`}
+                          >
+                            <BarChart2 className="w-3.5 h-3.5 text-gray-500 shrink-0" />
+                            <span className={`text-sm font-semibold ${isSelected ? 'text-[#22c55e]' : 'text-white'}`}>
+                              {p.display_name || p.symbol}
+                            </span>
+                            {isSelected && livePrice && (
+                              <span className="ml-auto text-xs font-mono text-gray-400">{livePrice.toFixed(2)}</span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="bg-[#0b1019] border-b border-[#1e2d40]">
+              <DigitBar livePrice={livePrice} static />
             </div>
             <div className="border-t border-[#1e2d40]">
               <TradingPanel balance={currentBalance} pair={pair} onTrade={handleTrade} onStartAuto={handleStartAuto}
@@ -730,16 +800,85 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
                 onScannerOpen={() => setScannerOpen(true)} />
             </div>
           </div>
-          <div className={`absolute inset-0 ${mobileTab === 'chat' ? 'block' : 'hidden'}`}><LiveChat user={user} /></div>
+          {/* Positions tab */}
+          <div className={`absolute inset-0 flex flex-col bg-[#0b1019] ${mobileTab === 'positions' ? 'flex' : 'hidden'}`}>
+            {/* Sub-tabs */}
+            <div className="flex border-b border-[#1e2d40] shrink-0">
+              {(['open', 'closed', 'transactions'] as const).map(t => (
+                <button key={t} onClick={() => setMobilePosTab(t)}
+                  className={`flex-1 py-2.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${mobilePosTab === t ? 'text-[#22c55e] border-b-2 border-[#22c55e]' : 'text-gray-500'}`}>
+                  {t === 'open' ? `Open (${activeTrade ? 1 : 0})` : t === 'closed' ? `Closed (${historyTrades.length || closedTrades.length})` : 'Txns'}
+                </button>
+              ))}
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto">
+              {mobilePosTab === 'open' && (
+                <>
+                  {activeTrade
+                    ? <TradeCard trade={activeTrade} symbol={symbol} isOpen />
+                    : !flashTrade && (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-2 p-8 text-center">
+                        <div className="w-10 h-10 rounded-full border-2 border-[#1e2d40] flex items-center justify-center">
+                          <div className="w-3 h-3 rounded-full border-2 border-gray-600" />
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium">No open positions</p>
+                      </div>
+                    )
+                  }
+                  {flashTrade && <TradeCard trade={flashTrade} symbol={symbol} isOpen={false} isFlash />}
+                </>
+              )}
+              {mobilePosTab === 'closed' && (
+                historyLoading
+                  ? <div className="flex items-center justify-center p-8"><div className="w-6 h-6 rounded-full border-2 border-t-[#22c55e] border-r-transparent border-b-transparent border-l-transparent animate-spin" /></div>
+                  : historyTrades.length === 0
+                    ? <div className="flex items-center justify-center p-8"><p className="text-xs text-gray-500">No closed trades yet</p></div>
+                    : historyTrades.map((t, i) => <TradeCard key={t.id || i} trade={{ ...t, pairName: t.binary_pairs?.display_name || t.binary_pairs?.symbol || 'Unknown', amount: Number(t.amount_usd || 0), payout: Number(t.payout_usd || 0), pnl: t.outcome === 'win' ? Number(t.payout_usd || 0) - Number(t.amount_usd || 0) : -Number(t.amount_usd || 0) }} symbol={symbol} isOpen={false} />)
+              )}
+              {mobilePosTab === 'transactions' && (
+                historyLoading
+                  ? <div className="flex items-center justify-center p-8"><div className="w-6 h-6 rounded-full border-2 border-t-[#22c55e] border-r-transparent border-b-transparent border-l-transparent animate-spin" /></div>
+                  : historyTrades.length === 0
+                    ? <div className="flex items-center justify-center p-8"><p className="text-xs text-gray-500">No transactions yet</p></div>
+                    : <div className="flex flex-col divide-y divide-[#1e2d40]">
+                      {historyTrades.map((t, i) => {
+                        const isWin = t.outcome === 'win'
+                        const isLoss = t.outcome === 'loss'
+                        const stakeDisp = Number(t.amount_usd || 0) * (activeCurrency === 'KES' ? conversionRate : 1)
+                        const payoutDisp = Number(t.payout_usd || 0) * (activeCurrency === 'KES' ? conversionRate : 1)
+                        const pnl = isWin ? payoutDisp - stakeDisp : isLoss ? -stakeDisp : 0
+                        const pnlStr = (pnl >= 0 ? '+' : '') + symbol + ' ' + Math.abs(pnl).toFixed(2)
+                        const pairName = t.binary_pairs?.display_name || t.binary_pairs?.symbol || 'Unknown'
+                        return (
+                          <div key={t.id || i} className="flex items-center justify-between px-3 py-2.5 hover:bg-[#1e2d40]/40 transition-colors">
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="text-[11px] font-semibold text-white truncate">{pairName}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${t.direction === 'buy' ? 'bg-[#22c55e]/15 text-[#22c55e]' : 'bg-[#ef4444]/15 text-[#ef4444]'}`}>{t.direction}</span>
+                                <span className="text-[10px] text-gray-500">{symbol} {stakeDisp.toFixed(2)}</span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-0.5 shrink-0">
+                              <span className={`text-[11px] font-bold ${isWin ? 'text-[#22c55e]' : isLoss ? 'text-[#ef4444]' : 'text-gray-400'}`}>{pnlStr}</span>
+                              <span className={`text-[9px] font-semibold capitalize px-1.5 py-0.5 rounded ${isWin ? 'bg-[#22c55e]/10 text-[#22c55e]' : isLoss ? 'bg-[#ef4444]/10 text-[#ef4444]' : 'bg-gray-700 text-gray-400'}`}>{t.outcome}</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+              )}
+            </div>
+          </div>
           <div className={`absolute inset-0 ${mobileTab === 'leaders' ? 'block' : 'hidden'}`}><Leaderboard conversionRate={conversionRate} currency={activeCurrency} /></div>
           <div className={`absolute inset-0 ${mobileTab === 'tournaments' ? 'block' : 'hidden'}`}><Tournaments onBalanceDeducted={refreshUser} user={user} onLoginClick={() => openAuth('login')} /></div>
         </div>
         <div className="h-12 shrink-0 flex border-t border-[#1e2d40] bg-[#0e1320]">
           {[
-            { id: 'trade', icon: BarChart2, label: 'Trade' },
-            { id: 'chat', icon: MessageSquare, label: 'Chat' },
-            { id: 'leaders', icon: Trophy, label: 'Top' },
-            { id: 'tournaments', icon: Medal, label: 'Tours' },
+            { id: 'trade',       icon: BarChart2, label: 'Trade' },
+            { id: 'positions',   icon: Layers,    label: 'Positions' },
+            { id: 'leaders',     icon: Trophy,    label: 'Top' },
+            { id: 'tournaments', icon: Medal,     label: 'Tours' },
           ].map(({ id, icon: Icon, label }) => (
             <button key={id} onClick={() => setMobileTab(id as any)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors ${mobileTab === id ? 'text-[#22c55e] border-t-2 border-[#22c55e]' : 'text-gray-500'}`}>
@@ -759,7 +898,7 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
             {(['open', 'closed', 'transactions'] as const).map(t => (
               <button key={t} onClick={() => setPositionsTab(t)}
                 className={`flex-1 py-2.5 text-[10px] font-semibold uppercase tracking-wider transition-colors capitalize ${positionsTab === t ? 'text-[#22c55e] border-b-2 border-[#22c55e]' : 'text-gray-500 hover:text-gray-300'}`}>
-                {t === 'open' ? `Open (${activeTrade ? 1 : 0})` : t === 'closed' ? `Closed (${closedTrades.length})` : 'Txns'}
+                {t === 'open' ? `Open (${activeTrade ? 1 : 0})` : t === 'closed' ? `Closed (${historyTrades.length || closedTrades.length})` : 'Txns'}
               </button>
             ))}
           </div>
@@ -784,35 +923,46 @@ export default function TradingTerminal({ settings: initialSettings, pairs = [],
               </>
             )}
             {positionsTab === 'closed' && (
-              closedTrades.length === 0 ? (
+              historyLoading ? (
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <div className="w-6 h-6 rounded-full border-2 border-t-[#22c55e] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                </div>
+              ) : historyTrades.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4 text-center">
                   <p className="text-xs text-gray-500 font-medium">No closed trades yet</p>
                 </div>
               ) : (
-                closedTrades.map((t, i) => <TradeCard key={i} trade={t} symbol={symbol} isOpen={false} />)
+                historyTrades.map((t, i) => <TradeCard key={t.id || i} trade={{ ...t, pairName: t.binary_pairs?.display_name || t.binary_pairs?.symbol || 'Unknown', amount: Number(t.amount_usd || 0), payout: Number(t.payout_usd || 0), pnl: t.outcome === 'win' ? Number(t.payout_usd || 0) - Number(t.amount_usd || 0) : -Number(t.amount_usd || 0) }} symbol={symbol} isOpen={false} />)
               )
             )}
             {positionsTab === 'transactions' && (
-              closedTrades.length === 0 ? (
+              historyLoading ? (
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <div className="w-6 h-6 rounded-full border-2 border-t-[#22c55e] border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                </div>
+              ) : historyTrades.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4 text-center">
                   <p className="text-xs text-gray-500 font-medium">No transactions yet</p>
                 </div>
               ) : (
                 <div className="flex flex-col divide-y divide-[#1e2d40]">
-                  {closedTrades.map((t, i) => {
+                  {historyTrades.map((t, i) => {
                     const isWin = t.outcome === 'win'
                     const isLoss = t.outcome === 'loss'
-                    const pnl = isWin ? t.payout - t.amount : isLoss ? -t.amount : 0
+                    const stakeDisp = Number(t.amount_usd || 0) * (activeCurrency === 'KES' ? conversionRate : 1)
+                    const payoutDisp = Number(t.payout_usd || 0) * (activeCurrency === 'KES' ? conversionRate : 1)
+                    const pnl = isWin ? payoutDisp - stakeDisp : isLoss ? -stakeDisp : 0
                     const pnlStr = (pnl >= 0 ? '+' : '') + symbol + ' ' + Math.abs(pnl).toFixed(2)
+                    const pairName = t.binary_pairs?.display_name || t.binary_pairs?.symbol || 'Unknown'
                     return (
-                      <div key={i} className="flex items-center justify-between px-3 py-2.5 hover:bg-[#1e2d40]/40 transition-colors">
+                      <div key={t.id || i} className="flex items-center justify-between px-3 py-2.5 hover:bg-[#1e2d40]/40 transition-colors">
                         <div className="flex flex-col gap-0.5 min-w-0">
-                          <span className="text-[11px] font-semibold text-white truncate">{t.pairName || 'Unknown'}</span>
+                          <span className="text-[11px] font-semibold text-white truncate">{pairName}</span>
                           <div className="flex items-center gap-1.5">
                             <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${t.direction === 'buy' ? 'bg-[#22c55e]/15 text-[#22c55e]' : 'bg-[#ef4444]/15 text-[#ef4444]'}`}>
-                              {t.tradeType || t.direction}
+                              {t.direction}
                             </span>
-                            <span className="text-[10px] text-gray-500">{symbol} {(t.amount || 0).toFixed(2)}</span>
+                            <span className="text-[10px] text-gray-500">{symbol} {stakeDisp.toFixed(2)}</span>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-0.5 shrink-0">

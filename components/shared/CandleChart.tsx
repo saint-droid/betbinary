@@ -84,9 +84,10 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
 
   useEffect(() => { onTickRef.current = onTick }, [onTick])
 
-  // Reset ready state when pair changes
+  // Reset ready state and scroll position when pair changes
   useEffect(() => {
     setDataReady(false)
+    userScrolledRef.current = false
   }, [pairId])
 
   useImperativeHandle(ref, () => ({
@@ -105,14 +106,14 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
       userScrolledRef.current = false
       programmingScrollRef.current = true
       chart.timeScale().fitContent()
-      programmingScrollRef.current = false
+      requestAnimationFrame(() => { programmingScrollRef.current = false })
     },
     scrollToLatest() {
       const chart = chartRef.current; if (!chart) return
       userScrolledRef.current = false
       programmingScrollRef.current = true
       chart.timeScale().scrollToRealTime()
-      programmingScrollRef.current = false
+      requestAnimationFrame(() => { programmingScrollRef.current = false })
     },
   }))
 
@@ -171,9 +172,8 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
     chartRef.current  = chart
     seriesRef.current = series
 
-    chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+    chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
       if (programmingScrollRef.current) return
-      // Only mark as user-scrolled if they actually moved away from real-time edge
       userScrolledRef.current = true
     })
 
@@ -277,7 +277,7 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
     programmingScrollRef.current = true
     chart.timeScale().applyOptions({ barSpacing: barSpacingRef.current, rightOffset: 5 })
     chart.timeScale().scrollToRealTime()
-    programmingScrollRef.current = false
+    requestAnimationFrame(() => { programmingScrollRef.current = false })
   }, [historicalCandles]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 4. SSE live ticks ─────────────────────────────────────────────────
@@ -325,7 +325,7 @@ const CandleChart = forwardRef<CandleChartHandle, Props>(function CandleChart(
         if (!userScrolledRef.current && chart) {
           programmingScrollRef.current = true
           chart.timeScale().scrollToRealTime()
-          programmingScrollRef.current = false
+          requestAnimationFrame(() => { programmingScrollRef.current = false })
         }
 
         onTickRef.current?.(payload)

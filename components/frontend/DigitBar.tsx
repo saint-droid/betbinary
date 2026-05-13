@@ -4,44 +4,40 @@ import { useEffect, useRef, useState } from 'react'
 
 interface Props {
   livePrice: number | null
+  static?: boolean
 }
 
 const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 const HISTORY = 500 // rolling window for frequency %
 
-const SIZE = 42
 const STROKE = 2
-const R = (SIZE - STROKE) / 2
-const CIRC = 2 * Math.PI * R
 
-function DigitCircle({ digit, pctNum, isActive, bgColor, arcColor, textColor, glow, scale }: {
+function DigitCircle({ digit, pctNum, isActive, bgColor, arcColor, textColor, glow, scale, size }: {
   digit: number; pctNum: number; isActive: boolean
-  bgColor: string; arcColor: string; textColor: string; glow: string; scale: number
+  bgColor: string; arcColor: string; textColor: string; glow: string; scale: number; size: number
 }) {
-  const dashOffset = CIRC - (pctNum / 100) * CIRC
+  const r = (size - STROKE) / 2
+  const circ = 2 * Math.PI * r
+  const dashOffset = circ - (pctNum / 100) * circ
 
   return (
-    <div style={{ width: SIZE, height: SIZE, position: 'relative', transform: `scale(${scale})`, transition: 'transform 0.15s', filter: glow !== 'none' ? `drop-shadow(${glow})` : 'none' }}>
-      <svg width={SIZE} height={SIZE} style={{ position: 'absolute', inset: 0 }}>
-        {/* Background circle fill */}
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill={bgColor} />
-        {/* Track ring / border */}
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
+    <div style={{ width: size, height: size, position: 'relative', transform: `scale(${scale})`, transition: 'transform 0.15s', filter: glow !== 'none' ? `drop-shadow(${glow})` : 'none' }}>
+      <svg width={size} height={size} style={{ position: 'absolute', inset: 0 }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill={bgColor} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke="#2A3548" strokeWidth={STROKE} />
-        {/* Progress arc — starts from top (−90°) */}
-        <circle cx={SIZE / 2} cy={SIZE / 2} r={R} fill="none"
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke={arcColor} strokeWidth={STROKE}
-          strokeDasharray={CIRC}
+          strokeDasharray={circ}
           strokeDashoffset={dashOffset}
           strokeLinecap="round"
-          transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
           style={{ transition: 'stroke-dashoffset 0.3s ease' }}
         />
       </svg>
-      {/* Digit label */}
       <span style={{
         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 11, fontWeight: 900, color: textColor, lineHeight: 1,
+        fontSize: size <= 36 ? 9 : 11, fontWeight: 900, color: textColor, lineHeight: 1,
       }}>
         {digit}
       </span>
@@ -49,7 +45,8 @@ function DigitCircle({ digit, pctNum, isActive, bgColor, arcColor, textColor, gl
   )
 }
 
-export default function DigitBar({ livePrice }: Props) {
+export default function DigitBar({ livePrice, static: isStatic }: Props) {
+  const SIZE = isStatic ? 30 : 42
   const [counts, setCounts] = useState<number[]>(Array(10).fill(0))
   const [total, setTotal] = useState(0)
   const [activeDigit, setActiveDigit] = useState<number | null>(null)
@@ -94,7 +91,7 @@ export default function DigitBar({ livePrice }: Props) {
   }, [activeDigit])
 
   return (
-    <div className="absolute bottom-7 left-0 right-0 z-20 pointer-events-none select-none flex flex-col items-center">
+    <div className={`${isStatic ? 'w-full' : 'absolute bottom-7 left-0 right-0 z-20'} pointer-events-none select-none flex flex-col items-center py-2`}>
       <div className="w-full max-w-[550px] px-2">
       {/* Arrow indicator — points upward, sits above the digit circles */}
       <div className="relative h-3 mb-2">
@@ -153,6 +150,7 @@ export default function DigitBar({ livePrice }: Props) {
                 textColor={isActive ? '#000' : 'rgba(156,163,175,0.8)'}
                 glow={isActive ? `0 0 10px ${color}80` : 'none'}
                 scale={isActive ? 1.15 : 1}
+                size={SIZE}
               />
 
               {/* Frequency % */}

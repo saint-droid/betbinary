@@ -152,8 +152,8 @@ export default function TradingPanel({
   const sellLabel = selectedType.id === 'over_under' ? 'Under' : selectedType.id === 'matches_differs' ? 'Differ' : 'Odd'
   const buyIcon   = selectedType.iconGreen
   const sellIcon  = selectedType.iconRed
-  const buyExtra  = needsDigit ? (selectedType.id === 'over_under' ? `> ${selectedDigit}` : `Digit ${selectedDigit}`) : undefined
-  const sellExtra = needsDigit ? (selectedType.id === 'over_under' ? `< ${selectedDigit}` : `Not ${selectedDigit}`)   : undefined
+  const buyExtra  = needsDigit ? (selectedType.id === 'over_under' ? `> ${selectedDigit}` : ``) : undefined
+  const sellExtra = needsDigit ? (selectedType.id === 'over_under' ? `< ${selectedDigit}` : ``)   : undefined
 
   // Derive button states
   // isInPosition = a trade is processing right now
@@ -169,18 +169,18 @@ export default function TradingPanel({
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
 
         {/* Learn */}
-        <div className="px-4 py-2.5 border-b border-[#1e2d40] flex items-center gap-2 text-xs text-gray-400 shrink-0">
+        <div className="px-4 sm:py-2.5 py-1.5 border-b border-[#1e2d40] sm:flex hidden items-center gap-2 text-xs text-gray-400 shrink-0">
           <Info className="w-3.5 h-3.5 text-[#22c55e] shrink-0" />
           <span>Learn about this trade type</span>
         </div>
 
         {/* Trade type selector */}
-        <div className="px-4 py-3 border-b border-[#1e2d40] shrink-0">
+        <div className="sm:px-0 px-1.5 sm:py-0 py-1.5 sm:border-b border-[#1e2d40] shrink-0">
           <div className="relative">
             <button
               disabled={anyActive}
               onClick={() => setTradeTypeOpen(v => !v)}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#151c2c] border border-[#1e2d40] hover:border-[#2a3a50] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-between px-3 py-2.5 sm:rounded-none rounded-lg bg-[#151c2c] sm:border-none border border-[#1e2d40] hover:border-[#2a3a50] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-2.5">
                 <span className="text-[#22c55e] text-sm">{selectedType.iconGreen}</span>
@@ -208,17 +208,17 @@ export default function TradingPanel({
         </div>
 
         {/* Trade Mode */}
-        <div className="px-4 py-3 border-b border-[#1e2d40] shrink-0">
-          <div className="flex items-center justify-between mb-2">
+        <div className="sm:px-4 px-1.5 sm:py-3 py-1.5 sm:border-b border-[#1e2d40] shrink-0">
+          <div className="sm:flex hidden items-center justify-between mb-2">
             <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Trade Mode</span>
             <span className="text-[10px] text-gray-500">{tradeMode === 'auto' ? 'Runs until target hit' : 'One trade per click'}</span>
           </div>
-          <div className="grid grid-cols-2 bg-[#151c2c] rounded-xl p-1 border border-[#1e2d40]">
+          <div className="grid grid-cols-2 bg-[#151c2c] sm:rounded-xl rounded-md p-1 border border-[#1e2d40]">
             {(['auto', 'manual'] as const).map(m => (
               <button key={m}
                 disabled={anyActive}
                 onClick={() => setTradeMode(m)}
-                className={`py-2 rounded-lg text-sm font-semibold transition-all disabled:cursor-not-allowed ${tradeMode === m ? 'bg-[#252D3D] text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>
+                className={`sm:py-2 py-1  sm:rounded-lg rounded-md text-sm font-semibold transition-all disabled:cursor-not-allowed ${tradeMode === m ? 'bg-[#252D3D] text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>
                 {m.charAt(0).toUpperCase() + m.slice(1)}
               </button>
             ))}
@@ -227,31 +227,49 @@ export default function TradingPanel({
 
         {/* Auto mode fields */}
         {tradeMode === 'auto' && (
-          <div className="px-4 py-3 border-b border-[#1e2d40] space-y-3 shrink-0">
-            {[
-              { icon: <Target className="w-3.5 h-3.5 text-[#22c55e]" />, label: 'Target Profit', value: targetProfit, set: setTargetProfit, prefix: '$' },
-              { icon: <AlertTriangle className="w-3.5 h-3.5 text-[#ef4444]" />, label: 'Target Loss', value: targetLoss, set: setTargetLoss, prefix: '$' },
-              { icon: <TrendingDown className="w-3.5 h-3.5 text-amber-400" />, label: 'Loss Multiple', value: lossMult, set: setLossMult, prefix: '×' },
-            ].map(({ icon, label, value, set, prefix }) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="flex items-center gap-2 w-28 shrink-0">
-                  {icon}
-                  <span className="text-xs text-gray-300 font-medium">{label}</span>
-                </div>
-                <div className="flex-1 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-medium">{prefix}</span>
+          <div className="sm:px-4 px-1.5 sm:py-3 py-1.5 border-b border-[#1e2d40] shrink-0">
+            {/* Mobile: horizontal */}
+            <div className="flex gap-2 sm:hidden">
+              {[
+                { icon: <Target className="w-3 h-3 text-[#22c55e]" />, label: 'Profit', value: targetProfit, set: setTargetProfit, prefix: '$' },
+                { icon: <AlertTriangle className="w-3 h-3 text-[#ef4444]" />, label: 'Loss', value: targetLoss, set: setTargetLoss, prefix: '$' },
+                { icon: <TrendingDown className="w-3 h-3 text-amber-400" />, label: 'Loss Multiplier', value: lossMult, set: setLossMult, prefix: '×' },
+              ].map(({ icon, label, value, set, prefix }) => (
+                <div key={label} className="flex-1 flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    {icon}
+                    <span className="text-[10px] text-gray-400 font-medium">{prefix} {label}</span>
+                  </div>
                   <input type="number" value={value} onChange={e => set(e.target.value)}
                     disabled={anyActive}
-                    className="w-full bg-[#151c2c] border border-[#1e2d40] rounded-lg pl-7 pr-3 py-2 text-white text-sm focus:outline-none focus:border-[#22c55e]/50 transition-colors disabled:opacity-50" />
+                    className="w-full bg-[#151c2c] border border-[#1e2d40] rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-[#22c55e]/50 transition-colors disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            {/* Desktop: horizontal row */}
+            <div className="hidden sm:flex gap-2">
+              {[
+                { icon: <Target className="w-3 h-3 text-[#22c55e]" />, label: 'Profit', value: targetProfit, set: setTargetProfit, prefix: '$' },
+                { icon: <AlertTriangle className="w-3 h-3 text-[#ef4444]" />, label: 'Loss', value: targetLoss, set: setTargetLoss, prefix: '$' },
+                { icon: <TrendingDown className="w-3 h-3 text-amber-400" />, label: 'Loss Mult', value: lossMult, set: setLossMult, prefix: '×' },
+              ].map(({ icon, label, value, set, prefix }) => (
+                <div key={label} className="flex-1 flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    {icon}
+                    <span className="text-[10px] text-gray-400 font-medium">{prefix} {label}</span>
+                  </div>
+                  <input type="number" value={value} onChange={e => set(e.target.value)}
+                    disabled={anyActive}
+                    className="w-full bg-[#151c2c] border border-[#1e2d40] rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-[#22c55e]/50 transition-colors disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Stake / Payout tabs + amount row */}
-        <div className="px-4 py-3 border-b border-[#1e2d40] shrink-0">
-          <div className="grid grid-cols-2 gap-1 mb-3 bg-[#151c2c] rounded-lg p-1">
+        <div className="sm:px-4 px-1.5 sm:py-3 py-1.5 sm:border-b border-[#1e2d40] shrink-0">
+          <div className="hidden sm:grid grid-cols-2 gap-1 mb-3 bg-[#151c2c] rounded-lg p-1">
             {(['stake', 'payout'] as const).map(t => (
               <button key={t} onClick={() => setStakeTab(t)}
                 className={`py-2 rounded-md text-sm font-semibold transition-colors ${stakeTab === t ? 'bg-[#1e2d40] text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>
@@ -280,7 +298,7 @@ export default function TradingPanel({
             </div>
 
             {/* AI Scanner */}
-            <button onClick={onScannerOpen} className="flex flex-col items-center justify-center px-3 py-2.5 rounded-lg bg-[#1e1040] border border-[#4f46e5]/40 hover:border-[#4f46e5] transition-colors shrink-0 gap-0.5">
+            <button onClick={onScannerOpen} className="flex flex-col items-center justify-center px-3 sm:py-2.5 py-1 rounded-lg bg-[#1e1040] border border-[#4f46e5]/40 hover:border-[#4f46e5] transition-colors shrink-0 gap-0.5">
               <div className="flex items-center gap-1">
                 <Cpu className="w-3.5 h-3.5 text-[#818cf8]" />
                 <span className="text-xs font-bold text-[#818cf8]">AI</span>
@@ -300,12 +318,12 @@ export default function TradingPanel({
 
         {/* Last Digit Prediction — Matches/Differs & Over/Under only */}
         {needsDigit && (
-          <div className="px-4 py-3 border-b border-[#1e2d40] shrink-0">
-            <p className="text-xs text-gray-400 font-semibold mb-2.5 uppercase tracking-wider">Last Digit Prediction</p>
-            <div className="grid grid-cols-5 gap-1.5">
+          <div className="sm:px-4 px-1.5 sm:py-3 py-1.5 border-none border-[#1e2d40] shrink-0">
+            <p className="sm:flex hidden text-xs text-gray-400 font-semibold mb-2.5 uppercase tracking-wider">Last Digit Prediction</p>
+            <div className="grid grid-cols-10 gap-1">
               {[0,1,2,3,4,5,6,7,8,9].map(d => (
                 <button key={d} onClick={() => setSelectedDigit(d)} disabled={anyActive}
-                  className={`py-2 rounded-lg text-sm font-bold transition-colors disabled:cursor-not-allowed ${selectedDigit === d ? 'bg-[#22c55e] text-black' : 'bg-[#151c2c] text-gray-300 hover:bg-[#1e2d40] border border-[#1e2d40]'}`}>
+                  className={`py-1.5 rounded-md text-xs font-bold transition-colors disabled:cursor-not-allowed ${selectedDigit === d ? 'bg-[#22c55e] text-black' : 'bg-[#151c2c] text-gray-300 hover:bg-[#1e2d40] border border-[#1e2d40]'}`}>
                   {d}
                 </button>
               ))}
@@ -316,10 +334,10 @@ export default function TradingPanel({
       </div>{/* end scrollable */}
 
       {/* ── Trade buttons — pinned at bottom ── */}
-      <div className="px-4 pb-4 pt-3 space-y-2 border-t border-[#1e2d40] shrink-0 bg-[#0e1320]">
+      <div className="sm:px-4 px-1.5 pb-4 pt-3 space-y-2 border-t border-[#1e2d40] shrink-0 bg-[#0e1320]">
 
         {/* Payout display */}
-        <div className="py-1 text-xs text-gray-400 flex justify-between">
+        <div className="py-1 text-xs text-gray-400 sm:flex hidden justify-between">
           <span>Payout</span>
           <span className="text-white font-semibold">{symbol} {payoutAmountBuy}</span>
         </div>
@@ -341,24 +359,26 @@ export default function TradingPanel({
         )}
 
         {/* Trade buttons */}
-        <BuyButton
-          label={buyLabel} icon={buyIcon} pct={payoutPct('buy')} payoutAmt={payoutAmountBuy} symbol={symbol}
-          showPayout={stakeTab === 'payout'} extra={buyExtra}
-          disabled={!canTrade || (anyActive && !buyActive)}
-          processing={buyActive}
-          isStop={tradeMode === 'auto' && autoRunning && autoDirection === 'buy'}
-          onStop={onStopTrade}
-          onClick={handleBuy}
-        />
-        <SellButton
-          label={sellLabel} icon={sellIcon} pct={payoutPct('sell')} payoutAmt={payoutAmountSell} symbol={symbol}
-          showPayout={stakeTab === 'payout'} extra={sellExtra}
-          disabled={!canTrade || (anyActive && !sellActive)}
-          processing={sellActive}
-          isStop={tradeMode === 'auto' && autoRunning && autoDirection === 'sell'}
-          onStop={onStopTrade}
-          onClick={handleSell}
-        />
+        <div className="flex sm:flex-col flex-row gap-2">
+          <BuyButton
+            label={buyLabel} icon={buyIcon} pct={payoutPct('buy')} payoutAmt={payoutAmountBuy} symbol={symbol}
+            showPayout={stakeTab === 'payout'} extra={buyExtra}
+            disabled={!canTrade || (anyActive && !buyActive)}
+            processing={buyActive}
+            isStop={tradeMode === 'auto' && autoRunning && autoDirection === 'buy'}
+            onStop={onStopTrade}
+            onClick={handleBuy}
+          />
+          <SellButton
+            label={sellLabel} icon={sellIcon} pct={payoutPct('sell')} payoutAmt={payoutAmountSell} symbol={symbol}
+            showPayout={stakeTab === 'payout'} extra={sellExtra}
+            disabled={!canTrade || (anyActive && !sellActive)}
+            processing={sellActive}
+            isStop={tradeMode === 'auto' && autoRunning && autoDirection === 'sell'}
+            onStop={onStopTrade}
+            onClick={handleSell}
+          />
+        </div>
       </div>
     </div>
   )
